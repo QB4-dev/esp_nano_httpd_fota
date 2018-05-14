@@ -16,8 +16,6 @@ ESPPORT		?= /dev/ttyUSB0
 ESPDELAY	?= 3
 ESPBAUD		?= 921600
 
-
-
 # name for the target project
 TARGET		= app
 
