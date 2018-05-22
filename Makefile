@@ -20,7 +20,7 @@ ESPBAUD		?= 921600
 TARGET		= app
 
 # which modules (subdirectories) of the project to include in compiling
-MODULES			= user
+MODULES			= user esp_nano_httpd esp_nano_httpd/util
 EXTRA_INCDIR	= include driver/include
 
 # libraries used in this project, mainly provided by the SDK
@@ -103,8 +103,12 @@ TARGET_BIN_USR1 := $(addprefix $(BUILD_BASE)/,$(TARGET).user1.bin)
 TARGET_BIN_USR2 := $(addprefix $(BUILD_BASE)/,$(TARGET).user2.bin)
 TARGET_BIN	:=  $(TARGET_BIN_USR1) $(TARGET_BIN_USR2)
 
-BLANKPOS   ="$$(printf "0x%X" $$(($(ESP_SPI_FLASH_SIZE_K)*512-0x2000)))"
-INITDATAPOS="$$(printf "0x%X" $$(($(ESP_SPI_FLASH_SIZE_K)*512-0x4000)))"
+#erase info
+BLANK_MAP:=512:0x7E000 1024:0xFE000 2048: 0x1FE000 4096:0x3FE000
+INITDATA_MAP:=512:0x7C000 1024:0xFC000 2048:0x1FC000 4096:0x3FC000
+
+BLANKPOS=$(call maplookup,$(ESP_SPI_FLASH_SIZE_K),$(BLANK_MAP))
+INITDATAPOS=$(call maplookup,$(ESP_SPI_FLASH_SIZE_K),$(INITDATA_MAP))
 
 #Convert SPI size into arg for appgen. Format: no=size
 FLASH_MAP_CONV:=0:512 2:1024 5:2048 6:4096
@@ -160,12 +164,16 @@ endef
 $(eval $(call genappbin,$(TARGET_OUT_USR1),$$(LD_SCRIPT_USR1),$$(TARGET_BIN_USR1),1))
 $(eval $(call genappbin,$(TARGET_OUT_USR2),$$(LD_SCRIPT_USR2),$$(TARGET_BIN_USR2),2))
 
-.PHONY: all checkdirs clean default-tgt
+.PHONY: all checkdirs clean default-tgt html
 
-all: checkdirs $(TARGET_OUT) $(FW_FILE_1) $(FW_FILE_2)
+all: checkdirs  html $(TARGET_OUT) $(FW_FILE_1) $(FW_FILE_2)
 
 
 checkdirs: $(BUILD_DIR) $(FW_BASE)
+
+html:
+	@echo "generating html includes..."
+	$(Q) $(shell ./html/gen_includes.sh)
 
 $(APP_AR): $(OBJ)
 	$(vecho) "AR $@"
@@ -203,6 +211,7 @@ clean:
 	$(Q) rm -f  $(APP_AR)
 	$(Q) rm -f  $(TARGET_OUT)
 	$(Q) rm -rf $(FW_BASE) 
-	$(Q) rm -rf $(BUILD_BASE)
+	$(Q) rm -rf $(BUILD_BASE) 
+	$(Q) rm -rf html/include
 
 $(foreach bdir,$(BUILD_DIR),$(eval $(call compile-objects,$(bdir))))
