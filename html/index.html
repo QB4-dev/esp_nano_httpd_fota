@@ -12,30 +12,65 @@
 <button type="button" onclick="wifi_scan()">Scan</button>
 </div>
 <br>
-<h3>LED demo</h3>
-<form method="post" id="led_form">
-	Set led frequency
-	<input type="number" name="led_freq" min="1" max="20" value="2">
-	<input type="submit" value="set LED freq"> 
-</form>
 
-<strong>OTA upgrade:</strong><br>
-<form method="post" action="/upload" id="wav_form" enctype="multipart/form-data">
-    fw file:<br>
-    <input type="file" name="upload_file"><br>
+<strong>file upload:</strong><br>
+<form method="post" action="/upload" enctype="multipart/form-data">
+    upload file:<br>
+    <input type="file" name="upload_file">
     <input type="submit" value="Upload" name="submit">
 </form>
 
-<script>
-led_form = document.getElementById("led_form");
-led_form.addEventListener("submit", set_led, true);
+<strong>FOTA upgrade:</strong><br>
+<div id="FOTA_info"></div>
+<form method="post" action="/upgrade" id="fota_form" enctype="multipart/form-data">
+    <div id="upgrade_info">
+    FW file:
+    <input type="file" name="upload_file">
+    <input type="submit" value="Upgrade" name="submit">
+    </div>
+</form>
 
-function set_led(event) {
+<script>
+fota_form = document.getElementById("fota_form");
+fota_form.addEventListener("submit", fw_upload, true);
+
+function fw_upload(event) {
 	event.preventDefault();
+	var data =  new FormData(fota_form);
 	var xhttp = new XMLHttpRequest();
-	xhttp.open("GET","/led?"+serialize(led_form), true);
+	var info = document.getElementById("upgrade_info");
+	xhttp.onreadystatechange = function() {
+		if(this.readyState == 4 && this.status == 200){
+			var obj = JSON.parse(this.responseText);
+			info.innerHTML  = '<small>'+obj.upload_status+'</small>';
+			info.innerHTML += '<button type="button" onclick="fota_reboot()">reboot</button>';
+		}
+	};
+	info.innerHTML = "<small>upgrade...</small>";
+	xhttp.open("POST","/upgrade", true);
+	xhttp.send(data);
+}
+function fota_reboot() {
+	var xhttp = new XMLHttpRequest();
+	xhttp.open("GET","/upgrade?action=reboot", true);
 	xhttp.send(); 
-}			
+	setTimeout(function reload(){ window.location.reload(true) }, 1000);
+}	
+
+window.onload = function() {
+	var ota = document.getElementById("FOTA_info");
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if(this.readyState == 4 && this.status == 200){
+			var obj = JSON.parse(this.responseText);
+			ota.innerHTML = '<small>current APP:'+obj.usrbin+'</small><br>';
+		}	
+	};
+	xhttp.open("GET","/upgrade", true);
+	xhttp.send();	
+};
+
+			
 
 function serialize(form) {
     var field, l, s = [];
@@ -96,7 +131,6 @@ function get_wifi_icon(x,y,rssi,auth){
 	icon += '</g></svg>';
 	return icon;
 }
-
 
 function show_conn_info(esp_response){
 	var obj = JSON.parse(esp_response);
