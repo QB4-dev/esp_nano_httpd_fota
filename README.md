@@ -2,15 +2,15 @@
 
 To compile yourself:
 
-git clone https://github.com/QB4-dev/esp_nano_httpd_ota --recursive
+git clone https://github.com/QB4-dev/esp_nano_httpd_fota --recursive
 
-cd esp_nano_httpd_ota/
+cd esp_nano_httpd_fota
 
 make
 
 make flash
 
-In this example you can test FOTA upgrade feature. It is tested on ESP-12 board. 
+In this example you can test FOTA upgrade feature. It has been tested on ESP-12 board. 
 
 See it in action
 https://gfycat.com/UnsungObedientAmericankestrel
