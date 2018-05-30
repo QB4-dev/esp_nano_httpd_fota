@@ -24,6 +24,6 @@ In case of errors during boot execute
 `make flashinit`
 This will fix flash rf_cal section
 
-![](https://gfycat.com/UnsungObedientAmericankestrel)
+<img src="https://gfycat.com/UnsungObedientAmericankestrel" width="1024" height="768" />
 
 You can also check file upload feature. Just upload text file and see it's content in iframe
