@@ -1,6 +1,7 @@
 #include <ets_sys.h>
 #include <osapi.h>
 #include <gpio.h>
+#include <mem.h>
 #include <os_type.h>
 #include <user_config.h>
 #include <upgrade.h>
@@ -21,18 +22,64 @@ void blink_fun(void *arg)
         gpio_output_set(BIT2, 0, BIT2, 0);
 }
 
-file_info_t flash_wav_file = {
+file_info_t flash_txt_file = {
 	.accept_cont_type = "text",
 	.base_sec = 0x250,
-	.max_f_size = 64*SPI_FLASH_SEC_SIZE
+	.max_f_size = 4*SPI_FLASH_SEC_SIZE
 };
+
+void ICACHE_FLASH_ATTR flash_read_callback(struct espconn *conn, void *arg, uint32_t len)
+{
+	http_request_t *req = conn->reverse;
+	file_info_t *f_info = (file_info_t*)arg;
+	const char *html;
+	const char *flash_buff;
+	const char *flash_data;
+	uint32_t data_len=0;
+	uint32_t i;
+	const char header[]= "<!DOCTYPE html><html lang=\"en\">"
+						"<head><title>flash content</title></head>"
+						"<body style=\"font-family:Arial;\">\r\n";
+	const char end[] = "</body></html>";
+
+
+	//handle only GET request with query
+	if(req == NULL || req->type == TYPE_POST) return resp_http_error(conn);
+
+	flash_buff = (const char *)os_malloc(f_info->max_f_size);
+	if(flash_buff == NULL) return resp_http_error(conn);
+
+	spi_flash_read(f_info->base_sec*SPI_FLASH_SEC_SIZE, (uint32*)flash_buff, f_info->max_f_size);
+	for(i=0 ; i<f_info->max_f_size; i++){
+		data_len++;
+		if(flash_buff[i]==0 || flash_buff[i]==0xff)break;
+	}
+	flash_data = (const char *)os_malloc(data_len);
+	if(flash_data == NULL) return resp_http_error(conn);
+
+	os_memcpy(flash_data, flash_buff, data_len);
+	os_free(flash_buff);
+
+	html = (const char *)os_malloc(data_len+256);
+	if(html == NULL) return resp_http_error(conn);
+
+	os_strcpy(html, header);
+	os_memcpy(html+strlen(html), flash_data, data_len);
+	os_strcpy(html+strlen(header)+data_len-1,end);
+
+	os_free(flash_data);
+
+	send_html(conn,(void*)html,strlen(html));
+	os_free(html);
+}
 
 // URL config table
 const http_callback_t url_cfg[] = {
 	{"/", send_html, index_html, sizeof(index_html)},
 	{"/wifi", wifi_callback, NULL, 0},
+	{"/read",flash_read_callback, &flash_txt_file,0 },
 	{"/upgrade", firmware_upgrade_callback, NULL, 0 },
-	{"/upload", file_upload_callback, &flash_wav_file, 0 },
+	{"/upload", file_upload_callback, &flash_txt_file, 0 },
 	{0,0,0,0}
 };
 

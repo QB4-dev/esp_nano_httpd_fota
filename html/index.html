@@ -13,13 +13,6 @@
 </div>
 <br>
 
-<strong>file upload:</strong><br>
-<form method="post" action="/upload" enctype="multipart/form-data">
-    upload file:<br>
-    <input type="file" name="upload_file">
-    <input type="submit" value="Upload" name="submit">
-</form>
-
 <strong>FOTA upgrade:</strong><br>
 <div id="FOTA_info"></div>
 <form method="post" action="/upgrade" id="fota_form" enctype="multipart/form-data">
@@ -29,8 +22,35 @@
     <input type="submit" value="Upgrade" name="submit">
     </div>
 </form>
+<br>
+<br>
+<strong>file upload:</strong><br>
+<form method="post" action="/upload" id="upload_form" enctype="multipart/form-data">
+    upload file:<br>
+    <input type="file" name="upload_file">
+    <input type="submit" value="Upload" name="submit">
+    <div id="upload_info"></div>
+</form>
+<br>
+<strong>flash file content:</strong><br>
+<iframe src="/read" height="100" width="300"></iframe> 
+
 
 <script>
+window.onload = function() {
+	var info = document.getElementById("FOTA_info");
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if(this.readyState == 4 && this.status == 200){
+			var obj = JSON.parse(this.responseText);
+			info.innerHTML = '<small>current APP:'+obj.usrbin+'</small><br>';
+		}	
+	};
+	xhttp.open("GET","/upgrade", true);
+	xhttp.send();	
+};
+
+
 fota_form = document.getElementById("fota_form");
 fota_form.addEventListener("submit", fw_upload, true);
 
@@ -57,18 +77,28 @@ function fota_reboot() {
 	setTimeout(function reload(){ window.location.reload(true) }, 1000);
 }	
 
-window.onload = function() {
-	var ota = document.getElementById("FOTA_info");
+
+upload_form = document.getElementById("upload_form");
+upload_form.addEventListener("submit", file_upload, true);
+
+function file_upload(event) {
+	event.preventDefault();
+	var data =  new FormData(upload_form);
 	var xhttp = new XMLHttpRequest();
+	var info = document.getElementById("upload_info");
 	xhttp.onreadystatechange = function() {
 		if(this.readyState == 4 && this.status == 200){
 			var obj = JSON.parse(this.responseText);
-			ota.innerHTML = '<small>current APP:'+obj.usrbin+'</small><br>';
-		}	
+			info.innerHTML  = '<small>'+obj.upload_status+'</small>';
+			setTimeout(function reload(){ window.location.reload(true) }, 3000);
+		}
 	};
-	xhttp.open("GET","/upgrade", true);
-	xhttp.send();	
-};
+	info.innerHTML = "<small>upload...</small>";
+	xhttp.open("POST","/upload", true);
+	xhttp.send(data);
+}
+
+
 
 			
 

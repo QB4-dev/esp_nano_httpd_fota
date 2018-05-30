@@ -195,9 +195,6 @@ $(FW_FILE_1): $(FW_BASE) $(TARGET_BIN_USR1)
 
 flash: $(TARGET_OUT) $(FW_BASE)
 	$(Q) $(ESPTOOL) $(ESPTOOL_OPTS) write_flash $(ESPTOOL_FLASHDEF) 0x00000 "$(SDK_BASE)/bin/boot_v1.6.bin" 0x01000 $(FW_FILE_1)
-	
-flash_ota: $(TARGET_OUT) $(FW_BASE)
-	$(Q) $(ESPTOOL) $(ESPTOOL_OPTS) write_flash $(ESPTOOL_FLASHDEF) 0x101000 $(FW_FILE_2)
 
 blankflash:
 	$(Q) $(ESPTOOL) $(ESPTOOL_OPTS) write_flash $(ESPTOOL_FLASHDEF) $(BLANKPOS) $(SDK_BASE)/bin/blank.bin $(INITDATAPOS) $(SDK_BASE)/bin/esp_init_data_default.bin
