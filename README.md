@@ -15,7 +15,7 @@ In this example you can test FOTA upgrade feature. It has been tested on ESP-12 
 See it in action
 https://gfycat.com/UnsungObedientAmericankestrel
 
-To use it on ESP-01 please change in Makefile
+To use it on ESP-01(with 1MB flash) please change in Makefile
 ```Makefile
 #SPI flash size, in K
 ESP_SPI_FLASH_SIZE_K=4096
