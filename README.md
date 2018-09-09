@@ -2,7 +2,7 @@
 
 To compile yourself:
 
-git clone https://github.com/QB4-dev/esp_nano_httpd_fota --recursive
+'git clone https://github.com/QB4-dev/esp_nano_httpd_fota --recursive'
 
 cd esp_nano_httpd_fota
 
