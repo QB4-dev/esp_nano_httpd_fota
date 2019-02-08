@@ -24,6 +24,7 @@ void blink_fun(void *arg)
 }
 
 file_info_t flash_txt_file = {
+	.accept_file_ext = ".txt",
 	.accept_cont_type = "text",
 	.base_sec = 0x250,
 	.max_f_size = 4*SPI_FLASH_SEC_SIZE
