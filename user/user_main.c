@@ -6,9 +6,10 @@
 #include <user_config.h>
 #include <upgrade.h>
 
-#include "../esp_nano_httpd/esp_nano_httpd.h"
-#include "../esp_nano_httpd/util/nano_httpd_wifi_util.h"
-#include "../esp_nano_httpd/util/nano_httpd_file_upload.h"
+#include "esp_nano_httpd.h"
+#include "util/wifi_util.h"
+#include "util/file_upload.h"
+#include "util/firmware_upgrade.h"
 
 #include "../html/include/index.h"
 
@@ -75,11 +76,11 @@ void ICACHE_FLASH_ATTR flash_read_callback(struct espconn *conn, void *arg, uint
 
 // URL config table
 const http_callback_t url_cfg[] = {
-	{"/", send_html, index_html, sizeof(index_html)},
-	{"/wifi", wifi_callback, NULL, 0},
-	{"/read",flash_read_callback, &flash_txt_file,0 },
-	{"/upgrade", firmware_upgrade_callback, NULL, 0 },
-	{"/upload", file_upload_callback, &flash_txt_file, 0 },
+	{"/",		send_html, 					index_html, 	sizeof(index_html)},
+	{"/wifi",	wifi_callback, 				NULL, 			0 },
+	{"/read",	flash_read_callback,		&flash_txt_file,0 },
+	{"/upgrade",firmware_upgrade_callback, 	NULL,			0 },
+	{"/upload",	file_upload_callback, 		&flash_txt_file,0 },
 	{0,0,0,0}
 };
 

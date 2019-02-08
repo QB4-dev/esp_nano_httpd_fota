@@ -12,15 +12,13 @@ SDK_BASE	?= /opt/esp-open-sdk/sdk
 #Esptool.py path and port
 ESPTOOL		?= esptool.py
 ESPPORT		?= /dev/ttyUSB0
-#ESPDELAY indicates seconds to wait between flashing the two binary images
-ESPDELAY	?= 3
 ESPBAUD		?= 921600
 
 # name for the target project
 TARGET		= app
 
 # which modules (subdirectories) of the project to include in compiling
-MODULES			= user esp_nano_httpd esp_nano_httpd/util
+MODULES			= user esp_nano_httpd  esp_nano_httpd/util
 EXTRA_INCDIR	= include driver/include
 
 # libraries used in this project, mainly provided by the SDK
@@ -89,7 +87,6 @@ $(patsubst $(strip $(1)):%,%,$(filter $(strip $(1)):%,$(2)))
 endef
 
 # linker script used for the linker step
-
 LD_MAP_1:=512:eagle.app.v6.new.512.app1.ld 1024:eagle.app.v6.new.1024.app1.ld 2048:eagle.app.v6.new.2048.ld 4096:eagle.app.v6.new.2048.ld
 LD_MAP_2:=512:eagle.app.v6.new.512.app2.ld 1024:eagle.app.v6.new.1024.app2.ld 2048:eagle.app.v6.new.2048.ld 4096:eagle.app.v6.new.2048.ld
 LD_SCRIPT_USR1	:= $(call maplookup,$(ESP_SPI_FLASH_SIZE_K),$(LD_MAP_1))
@@ -109,10 +106,6 @@ INITDATA_MAP:=512:0x7C000 1024:0xFC000 2048:0x1FC000 4096:0x3FC000
 
 BLANKPOS=$(call maplookup,$(ESP_SPI_FLASH_SIZE_K),$(BLANK_MAP))
 INITDATAPOS=$(call maplookup,$(ESP_SPI_FLASH_SIZE_K),$(INITDATA_MAP))
-
-#Convert SPI size into arg for appgen. Format: no=size
-FLASH_MAP_CONV:=0:512 2:1024 5:2048 6:4096
-ESP_FLASH_SIZE_IX:=$(maplookup $(ESP_SPI_FLASH_SIZE_K),,$(FLASH_MAP_CONV))
 	
 #Add all prefixes to paths
 LIBS			:= $(addprefix -l,$(LIBS))
@@ -154,7 +147,9 @@ $(3): $(1)
 	$$(Q) $$(OBJCOPY) --only-section .data -O binary $1 build/eagle.app.v6.data.bin
 	$$(Q) $$(OBJCOPY) --only-section .rodata -O binary $1 build/eagle.app.v6.rodata.bin
 	$$(Q) $$(OBJCOPY) --only-section .irom0.text -O binary $1 build/eagle.app.v6.irom0text.bin
-	$$(Q) cd build; COMPILE=gcc PATH=$$(XTENSA_TOOLS_ROOT):$$(PATH) python $$(APPGEN) $(1:build/%=%) 2 $$(ESP_FLASH_MODE) $$(ESP_FLASH_FREQ_DIV) $$(ESP_FLASH_SIZE_IX) $(4)
+	$$(Q) cd build; \
+	COMPILE=gcc PATH=$$(XTENSA_TOOLS_ROOT):$$(PATH) \
+	python $$(APPGEN) $(1:build/%=%) 2 $$(ESP_FLASH_MODE) $$(ESP_FLASH_FREQ_DIV) $$(ESP_FLASH_SIZE_IX) $(4) > /dev/null
 	$$(Q) rm -f build/eagle.app.v6.*.bin
 	$$(Q) rm -f build/$(1)
 	$$(Q) mv build/eagle.app.flash.bin $$@
@@ -164,9 +159,9 @@ endef
 $(eval $(call genappbin,$(TARGET_OUT_USR1),$$(LD_SCRIPT_USR1),$$(TARGET_BIN_USR1),1))
 $(eval $(call genappbin,$(TARGET_OUT_USR2),$$(LD_SCRIPT_USR2),$$(TARGET_BIN_USR2),2))
 
-.PHONY: all checkdirs clean default-tgt html
+.PHONY: all checkdirs clean default-tgt html $(BUILD_BASE)/espfs.img
 
-all: checkdirs  html $(TARGET_OUT) $(FW_FILE_1) $(FW_FILE_2)
+all: checkdirs html $(TARGET_OUT) $(FW_FILE_1) $(FW_FILE_2) 
 
 
 checkdirs: $(BUILD_DIR) $(FW_BASE)
@@ -186,18 +181,22 @@ $(FW_BASE):
 	$(Q) mkdir -p $@
 	
 $(FW_FILE_1): $(FW_BASE) $(TARGET_BIN_USR1)
-	$(vecho) "FW $(FW_BASE)/$@"
+	$(vecho) "FW: $(FW_BASE)/$@"
 	$(Q) cp $(TARGET_BIN_USR1) $(FW_FILE_1)
 	
  $(FW_FILE_2): $(FW_BASE) $(TARGET_BIN_USR2)
-	$(vecho) "FW $(FW_BASE)/$@"
+	$(vecho) "FW: $(FW_BASE)/$@"
 	$(Q) cp $(TARGET_BIN_USR2) $(FW_FILE_2)
 
 flash: $(TARGET_OUT) $(FW_BASE)
 	$(Q) $(ESPTOOL) $(ESPTOOL_OPTS) write_flash $(ESPTOOL_FLASHDEF) 0x00000 "$(SDK_BASE)/bin/boot_v1.6.bin" 0x01000 $(FW_FILE_1)
+	
+flash_bin2: $(TARGET_OUT) $(FW_BASE)
+	$(Q) $(ESPTOOL) $(ESPTOOL_OPTS) write_flash $(ESPTOOL_FLASHDEF) 0x00000 "$(SDK_BASE)/bin/boot_v1.6.bin" 0x081000 $(FW_FILE_2)
 
-blankflash:
+flash_init:
 	$(Q) $(ESPTOOL) $(ESPTOOL_OPTS) write_flash $(ESPTOOL_FLASHDEF) $(BLANKPOS) $(SDK_BASE)/bin/blank.bin $(INITDATAPOS) $(SDK_BASE)/bin/esp_init_data_default.bin
+
 
 #httpflash: $(FW_BASE)
 #	$(Q) curl -X POST --data-binary '@build/httpd.ota' $(ESPIP)/flash/upload > /dev/null
