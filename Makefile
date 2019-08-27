@@ -198,11 +198,7 @@ flash_init:
 	$(Q) $(ESPTOOL) $(ESPTOOL_OPTS) write_flash $(ESPTOOL_FLASHDEF) $(BLANKPOS) $(SDK_BASE)/bin/blank.bin $(INITDATAPOS) $(SDK_BASE)/bin/esp_init_data_default.bin
 
 
-#httpflash: $(FW_BASE)
-#	$(Q) curl -X POST --data-binary '@build/httpd.ota' $(ESPIP)/flash/upload > /dev/null
-#	$(Q) curl $(ESPIP)/flash/reboot
-#	$(Q) echo -e '\nDone'
-	
+
 clean:
 	$(Q) rm -f  $(APP_AR)
 	$(Q) rm -f  $(TARGET_OUT)

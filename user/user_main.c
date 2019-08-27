@@ -13,7 +13,7 @@
 
 #include "../html/include/index.h"
 
-static volatile os_timer_t blink_timer;
+static os_timer_t blink_timer;
 
 void blink_fun(void *arg)
 {	//Do blinky stuff
@@ -34,9 +34,9 @@ void ICACHE_FLASH_ATTR flash_read_callback(struct espconn *conn, void *arg, uint
 {
 	http_request_t *req = conn->reverse;
 	file_info_t *f_info = (file_info_t*)arg;
-	const char *html;
-	const char *flash_buff;
-	const char *flash_data;
+	char *html;
+	char *flash_buff;
+	char *flash_data;
 	uint32_t data_len=0;
 	uint32_t i;
 	const char header[]= "<!DOCTYPE html><html lang=\"en\">"
@@ -48,7 +48,7 @@ void ICACHE_FLASH_ATTR flash_read_callback(struct espconn *conn, void *arg, uint
 	//handle only GET request with query
 	if(req == NULL || req->type == TYPE_POST) return resp_http_error(conn);
 
-	flash_buff = (const char *)os_malloc(f_info->max_f_size);
+	flash_buff = (char *)os_malloc(f_info->max_f_size);
 	if(flash_buff == NULL) return resp_http_error(conn);
 
 	spi_flash_read(f_info->base_sec*SPI_FLASH_SEC_SIZE, (uint32*)flash_buff, f_info->max_f_size);
@@ -56,13 +56,13 @@ void ICACHE_FLASH_ATTR flash_read_callback(struct espconn *conn, void *arg, uint
 		data_len++;
 		if(flash_buff[i]==0 || flash_buff[i]==0xff)break;
 	}
-	flash_data = (const char *)os_malloc(data_len);
+	flash_data = (char *)os_malloc(data_len);
 	if(flash_data == NULL) return resp_http_error(conn);
 
 	os_memcpy(flash_data, flash_buff, data_len);
 	os_free(flash_buff);
 
-	html = (const char *)os_malloc(data_len+256);
+	html = (char *)os_malloc(data_len+256);
 	if(html == NULL) return resp_http_error(conn);
 
 	os_strcpy(html, header);
